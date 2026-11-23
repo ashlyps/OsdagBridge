@@ -117,6 +117,7 @@ from osdagbridge.core.utils.common import (
     KEY_TL_TEMP_FALL,
     KEY_TL_TEMP_RISE
 )
+from .styles import COLORS
 
 from osdagbridge.core.reports.report_utils import _tex
 from .executive_summary import executive_summary
@@ -206,7 +207,7 @@ def preamble(project_name, job_number, report_date, report_version='Rev 0'):
 \BeforeBeginEnvironment{table}{\needspace{5\baselineskip}}
 \BeforeBeginEnvironment{longtable}{\needspace{5\baselineskip}}
 
-\definecolor{osdagGreen}{HTML}{91B014}
+\definecolor{osdagGreen}{HTML}{""" + COLORS["primary"] + r"""}
 
 \fancypagestyle{main}{
   \fancyhf{}
@@ -214,7 +215,7 @@ def preamble(project_name, job_number, report_date, report_version='Rev 0'):
   \fancyhead[R]{""" + rd + r""" $|$ """ + rv + r"""}
   \fancyfoot[L]{Osdag $|$ FOSSEE $|$ Indian Institute of Technology Bombay}
   \fancyfoot[R]{Page \thepage\ of \pageref{LastPage}}
-  \renewcommand{\headrule}{\color{osdagGreen}\hrule width\headwidth height 1pt \vspace{2pt}}
+  \renewcommand{\headrule}{\color{osdagGreen}\hrule wiSdth\headwidth height 1pt \vspace{2pt}}
   \renewcommand{\footrule}{%
     \ifbool{hasSDonPage}{%
       \vspace{-20pt}%
