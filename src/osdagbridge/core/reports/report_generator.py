@@ -118,7 +118,8 @@ from osdagbridge.core.utils.common import (
     KEY_TL_TEMP_RISE
 )
 from .styles import COLORS
-from .report_charts import design_ur_chart, quantity_charts, latex_figure, PAGE_SIZE, PAGE_MARGIN, FONT_SIZE, TABLE_STYLE, PAGE_STYLE
+from .report_charts import design_ur_chart, quantity_charts, latex_figure
+from .styles import COLORS, PAGE_SIZE, PAGE_MARGIN, FONT_SIZE, TABLE_STYLE, PAGE_STYLE
 
 from osdagbridge.core.reports.report_utils import _tex
 from .executive_summary import executive_summary
