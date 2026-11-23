@@ -118,6 +118,7 @@ from osdagbridge.core.utils.common import (
     KEY_TL_TEMP_RISE
 )
 from .styles import COLORS
+from .report_charts import design_ur_chart, quantity_charts, latex_figure, PAGE_SIZE, PAGE_MARGIN, FONT_SIZE, TABLE_STYLE, PAGE_STYLE
 
 from osdagbridge.core.reports.report_utils import _tex
 from .executive_summary import executive_summary
@@ -154,10 +155,10 @@ def preamble(project_name, job_number, report_date, report_version='Rev 0'):
     rd = _tex(report_date)
     rv = _tex(report_version)
     return r"""
-\documentclass[12pt,a4paper]{report}
+\documentclass[""" + FONT_SIZE + "," + PAGE_SIZE + r"""]{report}
 
 % Packages
-\usepackage[a4paper, margin=1in]{geometry}
+\usepackage[""" + PAGE_SIZE + ", margin=" + PAGE_MARGIN + r"""]{geometry}
 \usepackage{graphicx}
 \usepackage{amsmath}
 \usepackage{amssymb}
@@ -194,13 +195,13 @@ def preamble(project_name, job_number, report_date, report_version='Rev 0'):
 \numberwithin{table}{chapter}
 \numberwithin{figure}{chapter}
 % Table layout and spacing: consistent padding, row height, and longtable pre/post skips
-\setlength{\tabcolsep}{6pt}
-\renewcommand{\arraystretch}{1.12}
-\setlength{\LTpre}{0pt}
-\setlength{\LTpost}{6pt}
+\setlength{\tabcolsep}{""" + TABLE_STYLE["column_padding"] + r"""}
+\renewcommand{\arraystretch}{""" + str(TABLE_STYLE["row_stretch"]) + r"""}
+\setlength{\LTpre}{""" + TABLE_STYLE["longtable_pre"] + r"""}
+\setlength{\LTpost}{""" + TABLE_STYLE["longtable_post"] + r"""}
 % Table rules (outline thickness) and small extra row height for clarity
-\setlength{\arrayrulewidth}{0.5pt}
-\setlength{\extrarowheight}{0.6pt}
+\setlength{\arrayrulewidth}{""" + TABLE_STYLE["rule_width"] + r"""}
+\setlength{\extrarowheight}{""" + TABLE_STYLE["extra_row_height"] + r"""}
 
 % Prevent tables from overflowing past the page bottom:
 % if fewer than 5 baseline-skips remain, break to the next page first.
@@ -215,7 +216,7 @@ def preamble(project_name, job_number, report_date, report_version='Rev 0'):
   \fancyhead[R]{""" + rd + r""" $|$ """ + rv + r"""}
   \fancyfoot[L]{Osdag $|$ FOSSEE $|$ Indian Institute of Technology Bombay}
   \fancyfoot[R]{Page \thepage\ of \pageref{LastPage}}
-  \renewcommand{\headrule}{\color{osdagGreen}\hrule wiSdth\headwidth height 1pt \vspace{2pt}}
+  \renewcommand{\headrule}{\color{osdagGreen}\hrule width\headwidth height 1pt \vspace{2pt}}
   \renewcommand{\footrule}{%
     \ifbool{hasSDonPage}{%
       \vspace{-20pt}%
@@ -253,7 +254,7 @@ def preamble(project_name, job_number, report_date, report_version='Rev 0'):
   \renewcommand{\footrule}{\vspace{-8pt}\color{osdagGreen}\hrule width\headwidth height 1pt \vspace{6pt}}
 }
 \pagestyle{main}
-\setstretch{1.15}
+\setstretch{""" + str(PAGE_STYLE["line_spacing"]) + r"""}
 
 % Custom Commands
 \newcommand{\placeholder}[1]{\textit{\textless #1\textgreater}}
@@ -925,11 +926,24 @@ def generate_report(payload, request):
             if 'analysis' in secs:
                 doc_parts.append(ch4_analysis(payload.analysis_summary, fig_paths, bridge, span_m))
             if 'design_checks' in secs:
-                doc_parts.append(ch5_design_checks(payload.design_checks, bridge))
+                chapter5_tex = ch5_design_checks(payload.design_checks, bridge)
+                ur_path = design_ur_chart(chapter5_tex, tmp_images)
+                if ur_path:
+                    # Insert the plot after the Chapter 5 summary table, not in another chapter.
+                    anchor = r'\noindent\textit{Note: UR = Demand / Capacity.'
+                    plot = latex_figure(ur_path, 'Utilization ratio summary (actual available design checks)')
+                    if anchor in chapter5_tex:
+                        chapter5_tex = chapter5_tex.replace(anchor, plot + anchor, 1)
+                    else:
+                        chapter5_tex += plot
+                doc_parts.append(chapter5_tex)
             if 'drawings' in secs and payload.options.include_figures:
                 doc_parts.append(ch6_drawings(fig_paths))
 
-            doc_parts.append(ch7_quantities(payload.inputs))
+            chapter7_tex = ch7_quantities(payload.inputs)
+            for chart_path, chart_title in quantity_charts(payload.inputs, tmp_images):
+                chapter7_tex += latex_figure(chart_path, chart_title)
+            doc_parts.append(chapter7_tex)
 
             mode = str(payload.inputs.get(KEY_DESIGN_MODE, "Optimized")).strip().lower()
             is_custom = mode in {"custom", "customized"}
